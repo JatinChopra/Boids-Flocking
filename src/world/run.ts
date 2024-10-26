@@ -5,7 +5,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import Boid0 from "../agents/Boid0";
 import { boidParamsType } from "../agents/Boid0";
 
-const quantity = 100;
+const quantity = 220;
 
 export const boundingDim = new THREE.Vector3(200, 120, 140);
 
@@ -36,10 +36,10 @@ export default function run(canvas: HTMLCanvasElement) {
     separationFactor: 0.5,
 
     alignmentRange: 16,
-    alignmentFactor: 0.5,
+    alignmentFactor: 0.03,
 
     cohesionRange: 12,
-    cohesionFactor: 0.5,
+    cohesionFactor: 0.02,
   };
 
   world.gui.add(boidParams, "turnaroundFactor", 0, 5, 0.01);
@@ -64,6 +64,11 @@ export default function run(canvas: HTMLCanvasElement) {
     const agent0 = new Boid0(agentGeo, normalMat);
     boids.push(agent0);
     world.scene.add(agent0.mesh);
+  }
+
+  // provide them other boid info
+  for (let i = 0; i < quantity; i++) {
+    boids[i].setFlock(boids);
   }
 
   // orb ctrls
