@@ -2,8 +2,10 @@ import * as THREE from "three";
 
 import { getRandomVector } from "../lib/utils";
 import { boundingDim } from "../world/run";
+import Predator0 from "./Predator0";
 
 export type boidParamsType = {
+  boundary: boolean;
   turnaroundFactor: number;
 
   separationRange: number;
@@ -14,6 +16,9 @@ export type boidParamsType = {
 
   cohesionRange: number;
   cohesionFactor: number;
+
+  escapeRange: number;
+  escapeFactor: number;
 };
 
 export default class Boid0 {
@@ -21,6 +26,15 @@ export default class Boid0 {
   velocity: THREE.Vector3;
   acceleration: THREE.Vector3;
   flock: Boid0[];
+  predators: Predator0[];
+
+  separationCircleGeo?: THREE.CircleGeometry;
+  alignmentCircleGeo?: THREE.CircleGeometry;
+  cohesionCircleGeo?: THREE.CircleGeometry;
+
+  separationBoundaryMesh?: THREE.LineSegments;
+  alignmentBoundaryMesh?: THREE.LineSegments;
+  cohesionBoundaryMesh?: THREE.LineSegments;
 
   rotationMatrix: THREE.Matrix4;
   targetQuaternion: THREE.Quaternion;
@@ -34,6 +48,7 @@ export default class Boid0 {
     this.acceleration = new THREE.Vector3(0, 0, 0);
 
     this.flock = [];
+    this.predators = [];
 
     this.rotationMatrix = new THREE.Matrix4();
     this.targetQuaternion = new THREE.Quaternion();
@@ -65,6 +80,7 @@ export default class Boid0 {
     this.velocity.add(this.acceleration);
     this.mesh.position.add(this.velocity);
 
+    this.escape(boidParams.escapeRange, boidParams.escapeFactor);
     this.velocity.clampLength(0, 1);
 
     // update position => make rotation
@@ -72,6 +88,32 @@ export default class Boid0 {
 
     // stayinside boundaries
     this.stayInsideBoundary(boidParams.turnaroundFactor);
+  }
+
+  escape(escapeRange: number, escapeFactor: number) {
+    for (let predator of this.predators) {
+      const safeRange = escapeRange;
+
+      const distance = this.mesh.position.distanceTo(predator.mesh.position);
+
+      if (distance < safeRange) {
+        const escapeVector = new THREE.Vector3().subVectors(
+          this.mesh.position,
+          predator.mesh.position
+        );
+
+        escapeVector.divideScalar(distance * distance);
+
+        // const steer = escapeVector.sub(this.velocity).multiplyScalar(0.5);
+
+        // this.velocity.add(steer);
+        this.velocity.add(escapeVector.multiplyScalar(escapeFactor));
+      }
+    }
+  }
+
+  addPredator(predator: Predator0) {
+    this.predators.push(predator);
   }
 
   separation(

@@ -2,10 +2,11 @@ import * as THREE from "three";
 import { SceneInit } from "../lib/SceneManager";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
-import Boid0 from "../agents/Boid0";
+import BoidsManager from "../agentManager/Boidsmanager";
 import { boidParamsType } from "../agents/Boid0";
+import { predatorParamsType } from "../agents/Predator0";
 
-const quantity = 220;
+const quantity = 450;
 
 export const boundingDim = new THREE.Vector3(200, 120, 140);
 
@@ -30,6 +31,7 @@ export default function run(canvas: HTMLCanvasElement) {
 
   // params & gui
   const boidParams: boidParamsType = {
+    boundary: false,
     turnaroundFactor: 0.03,
 
     separationRange: 8,
@@ -40,36 +42,42 @@ export default function run(canvas: HTMLCanvasElement) {
 
     cohesionRange: 12,
     cohesionFactor: 0.02,
+
+    escapeRange: 20,
+    escapeFactor: 5,
   };
 
-  world.gui.add(boidParams, "turnaroundFactor", 0, 5, 0.01);
+  const predatorParams: predatorParamsType = {
+    chasingRange: 30,
+    chasingFactor: 0.05,
+  };
 
-  world.gui.add(boidParams, "separationRange", 0, 100, 0.1);
-  world.gui.add(boidParams, "alignmentRange", 0, 100, 0.1);
-  world.gui.add(boidParams, "cohesionRange", 0, 100, 0.1);
+  const boidFolder = world.gui.addFolder("Boid");
+  boidFolder.add(boidParams, "turnaroundFactor", 0, 5, 0.01);
+  boidFolder.add(boidParams, "boundary");
 
-  world.gui.add(boidParams, "separationFactor", 0, 5, 0.01);
-  world.gui.add(boidParams, "alignmentFactor", 0, 5, 0.01);
-  world.gui.add(boidParams, "cohesionFactor", 0, 5, 0.01);
+  boidFolder.add(boidParams, "separationRange", 0, 100, 0.1);
+  boidFolder.add(boidParams, "alignmentRange", 0, 100, 0.1);
+  boidFolder.add(boidParams, "cohesionRange", 0, 100, 0.1);
+  boidFolder.add(boidParams, "escapeRange", 0, 100, 0.1);
+
+  boidFolder.add(boidParams, "separationFactor", 0, 5, 0.01);
+  boidFolder.add(boidParams, "alignmentFactor", 0, 5, 0.01);
+  boidFolder.add(boidParams, "cohesionFactor", 0, 5, 0.01);
+  boidFolder.add(boidParams, "escapeFactor", 0, 5, 0.01);
+
+  const predatorFolder = world.gui.addFolder("Predator");
+  predatorFolder.add(predatorParams, "chasingRange", 0, 100, 0.1);
+  predatorFolder.add(predatorParams, "chasingFactor", 0, 5, 0.01);
 
   // boid one
-  const normalMat = new THREE.MeshNormalMaterial();
-  const agentGeo = new THREE.ConeGeometry(2, 5);
-  agentGeo.rotateX(Math.PI * -0.5);
-
-  const boids: Boid0[] = [];
-
-  // create multiple boids
-  for (let i = 0; i < quantity; i++) {
-    const agent0 = new Boid0(agentGeo, normalMat);
-    boids.push(agent0);
-    world.scene.add(agent0.mesh);
-  }
-
-  // provide them other boid info
-  for (let i = 0; i < quantity; i++) {
-    boids[i].setFlock(boids);
-  }
+  const group0 = new BoidsManager(
+    world.scene,
+    quantity,
+    boidParams,
+    predatorParams
+  );
+  // group0.createPredator(1);
 
   // orb ctrls
   const orbctrls = new OrbitControls(world.cam, canvas);
@@ -83,9 +91,8 @@ export default function run(canvas: HTMLCanvasElement) {
     world.render();
 
     // update calls
-    for (let i = 0; i < quantity; i++) {
-      boids[i].move(boidParams);
-    }
+    group0.updateFlockPosition();
+    group0.updatePredators();
 
     window.requestAnimationFrame(animate);
   }
