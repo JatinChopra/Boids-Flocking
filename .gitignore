@@ -1,0 +1,39 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Typescript cache
+*.tsbuildinfo
+
+# Dependency directories
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# Tailwind generated files (if any)
+*.css.map
+
+# Temporary files
+.DS_Store
+Thumbs.db
+
