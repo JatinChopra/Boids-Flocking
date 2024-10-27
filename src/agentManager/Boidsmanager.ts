@@ -1,12 +1,14 @@
 import * as THREE from "three";
-import Boid0 from "../agents/Boid0";
-import Predator0, { predatorParamsType } from "../agents/Predator0";
+import Boid from "../agents/Boid";
+import Predator, { predatorParamsType } from "../agents/Predator";
 
-import { boidParamsType } from "../agents/Boid0";
+import { boidParamsType } from "../agents/Boid";
+import Projectile from "../agents/Projectile";
 
 export default class BoidsManager {
-  flock: Boid0[];
-  predators: Predator0[];
+  flock: Boid[];
+  predators: Predator[];
+  projectiles: Projectile[];
   params: boidParamsType;
   oldParams: boidParamsType;
   predatorParams: predatorParamsType;
@@ -22,6 +24,7 @@ export default class BoidsManager {
     params: boidParamsType,
     predatorParams: predatorParamsType
   ) {
+    this.projectiles = [];
     this.scene = scene;
     this.params = params;
     this.oldParams = { ...params };
@@ -47,7 +50,14 @@ export default class BoidsManager {
     const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
     for (let i = 0; i < quantity; i++) {
-      const predator = new Predator0(geo, mat, this.flock);
+      const predator = new Predator(
+        i,
+        geo,
+        mat,
+        this.flock,
+        this.projectiles,
+        this.scene
+      );
       this.predators.push(predator);
       this.scene.add(predator.mesh);
     }
@@ -58,14 +68,28 @@ export default class BoidsManager {
     }
   }
 
+  updateProjectiles() {
+    for (let projectile of this.projectiles) {
+      projectile.shoot();
+    }
+  }
+
   updatePredators() {
     for (let predator of this.predators) {
       predator.move(this.predatorParams);
+      // create a particle and add it to scene
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 1.2, 1.2),
+        new THREE.MeshBasicMaterial({ color: 0xffff00 })
+      );
+
+      box.position.copy(predator.mesh.position);
+      // this.scene.add(box);
     }
   }
 
   private createFlock(quantity: number) {
-    const newFlock: Boid0[] = [];
+    const newFlock: Boid[] = [];
     for (let i = 0; i < quantity; i++) {
       const newBoid = this.createNewBoid();
       newFlock.push(newBoid);
@@ -82,7 +106,16 @@ export default class BoidsManager {
 
   updateFlockPosition() {
     let idx = 0;
+    console.log(this.flock.length);
     for (let boid of this.flock) {
+      if (this.scene.children)
+        if (!this.scene.children.includes(boid.mesh)) {
+          // means boid has been killed
+
+          const idx = this.flock.indexOf(boid);
+          this.flock.splice(idx, 1);
+        }
+
       boid.move(this.params);
 
       if (idx == 0) {
@@ -92,7 +125,7 @@ export default class BoidsManager {
     }
   }
 
-  private createBoundaries(boid: Boid0) {
+  private createBoundaries(boid: Boid) {
     // separation boundary
     boid.separationCircleGeo = new THREE.CircleGeometry(
       this.params.separationRange
@@ -128,7 +161,7 @@ export default class BoidsManager {
     this.scene.add(boid.cohesionBoundaryMesh);
   }
 
-  private updateBoundaries(boid: Boid0) {
+  private updateBoundaries(boid: Boid) {
     if (this.oldParams.separationRange != this.params.separationRange) {
       if (boid.separationBoundaryMesh) {
         // find the diff in radius and scale according to that
@@ -178,13 +211,13 @@ export default class BoidsManager {
     boid.alignmentBoundaryMesh?.position.copy(boid.mesh.position);
   }
 
-  private createNewBoid(): Boid0 {
+  private createNewBoid(): Boid {
     const geo = new THREE.ConeGeometry(1.2, 3.2);
     geo.rotateX(Math.PI * -0.5);
 
     const mat = new THREE.MeshNormalMaterial();
 
-    const boid = new Boid0(geo, mat);
+    const boid = new Boid(geo, mat);
     return boid;
   }
 }

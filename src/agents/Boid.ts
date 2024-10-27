@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { getRandomVector } from "../lib/utils";
 import { boundingDim } from "../world/run";
-import Predator0 from "./Predator0";
+import Predator0 from "./Predator";
 
 export type boidParamsType = {
   boundary: boolean;

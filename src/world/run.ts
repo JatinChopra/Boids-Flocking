@@ -3,16 +3,17 @@ import { SceneInit } from "../lib/SceneManager";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 import BoidsManager from "../agentManager/Boidsmanager";
-import { boidParamsType } from "../agents/Boid0";
-import { predatorParamsType } from "../agents/Predator0";
+import { boidParamsType } from "../agents/Boid";
+import { predatorParamsType } from "../agents/Predator";
 
-const quantity = 450;
+const quantity = 20;
 
 export const boundingDim = new THREE.Vector3(200, 120, 140);
 
 export default function run(canvas: HTMLCanvasElement) {
   // initilizing the world
   const world = new SceneInit(canvas);
+  world.scene.background = new THREE.Color(0x1b1b1b);
   world.cam.position.set(0, 0, boundingDim.z / 2 + 80);
 
   // creating an object
@@ -32,7 +33,7 @@ export default function run(canvas: HTMLCanvasElement) {
   // params & gui
   const boidParams: boidParamsType = {
     boundary: false,
-    turnaroundFactor: 0.03,
+    turnaroundFactor: 0.08,
 
     separationRange: 8,
     separationFactor: 0.5,
@@ -43,13 +44,14 @@ export default function run(canvas: HTMLCanvasElement) {
     cohesionRange: 12,
     cohesionFactor: 0.02,
 
-    escapeRange: 20,
-    escapeFactor: 5,
+    escapeRange: 18,
+    escapeFactor: 99,
   };
 
   const predatorParams: predatorParamsType = {
+    maxSpeed: 1.4,
     chasingRange: 30,
-    chasingFactor: 0.05,
+    chasingFactor: 0.02,
   };
 
   const boidFolder = world.gui.addFolder("Boid");
@@ -64,11 +66,14 @@ export default function run(canvas: HTMLCanvasElement) {
   boidFolder.add(boidParams, "separationFactor", 0, 5, 0.01);
   boidFolder.add(boidParams, "alignmentFactor", 0, 5, 0.01);
   boidFolder.add(boidParams, "cohesionFactor", 0, 5, 0.01);
-  boidFolder.add(boidParams, "escapeFactor", 0, 5, 0.01);
+  boidFolder.add(boidParams, "escapeFactor", 0, 100, 1);
 
   const predatorFolder = world.gui.addFolder("Predator");
+  predatorFolder.add(predatorParams, "maxSpeed", 0, 5, 0.1);
   predatorFolder.add(predatorParams, "chasingRange", 0, 100, 0.1);
   predatorFolder.add(predatorParams, "chasingFactor", 0, 5, 0.01);
+
+  const clock = new THREE.Clock();
 
   // boid one
   const group0 = new BoidsManager(
@@ -77,7 +82,7 @@ export default function run(canvas: HTMLCanvasElement) {
     boidParams,
     predatorParams
   );
-  // group0.createPredator(1);
+  group0.createPredator(1);
 
   // orb ctrls
   const orbctrls = new OrbitControls(world.cam, canvas);
@@ -93,6 +98,7 @@ export default function run(canvas: HTMLCanvasElement) {
     // update calls
     group0.updateFlockPosition();
     group0.updatePredators();
+    group0.updateProjectiles();
 
     window.requestAnimationFrame(animate);
   }
