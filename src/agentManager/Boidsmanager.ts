@@ -4,10 +4,12 @@ import Predator, { predatorParamsType } from "../agents/Predator";
 
 import { boidParamsType } from "../agents/Boid";
 import Projectile from "../agents/Projectile";
+import ExplosionParticle from "../particles/ExplosionParticle";
 
 export default class BoidsManager {
   flock: Boid[];
   predators: Predator[];
+  explosionParticles: ExplosionParticle[];
   projectiles: Projectile[];
   params: boidParamsType;
   oldParams: boidParamsType;
@@ -25,6 +27,7 @@ export default class BoidsManager {
     predatorParams: predatorParamsType
   ) {
     this.projectiles = [];
+    this.explosionParticles = [];
     this.scene = scene;
     this.params = params;
     this.oldParams = { ...params };
@@ -47,7 +50,7 @@ export default class BoidsManager {
   createPredator(quantity: number) {
     const geo = new THREE.ConeGeometry(2, 5);
     geo.rotateX(Math.PI * -0.5);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 
     for (let i = 0; i < quantity; i++) {
       const predator = new Predator(
@@ -70,7 +73,14 @@ export default class BoidsManager {
 
   updateProjectiles() {
     for (let projectile of this.projectiles) {
-      projectile.shoot();
+      // destroy if they dont exist
+      if (this.scene.children.includes(projectile.mesh)) {
+        projectile.shoot();
+      } else {
+        // remove from array
+        const idx = this.projectiles.indexOf(projectile);
+        this.projectiles.splice(idx, 1);
+      }
     }
   }
 
@@ -104,14 +114,39 @@ export default class BoidsManager {
     return newFlock;
   }
 
+  updateExplosionParticle() {
+    for (let i = 0; i < this.explosionParticles.length; i++) {
+      const particle = this.explosionParticles[i];
+      // check their lifespan and destroy from scene as well as arry
+
+      if (particle.life <= 0) {
+        particle.mesh.geometry.dispose();
+        this.scene.remove(particle.mesh);
+        const idx = this.explosionParticles.indexOf(particle);
+        this.explosionParticles.splice(idx, 1);
+      }
+
+      particle.updateParticle();
+    }
+  }
+
   updateFlockPosition() {
     let idx = 0;
-    console.log(this.flock.length);
     for (let boid of this.flock) {
       if (this.scene.children)
-        if (!this.scene.children.includes(boid.mesh)) {
-          // means boid has been killed
+        if (boid.health <= 0) {
+          // create explosion particles
+          for (let i = 0; i < 25; i++) {
+            const particle = new ExplosionParticle(
+              this.scene,
+              boid.mesh.position
+            );
+            this.explosionParticles.push(particle);
+          }
 
+          // remove boid from array
+          boid.mesh.geometry.dispose();
+          this.scene.remove(boid.mesh);
           const idx = this.flock.indexOf(boid);
           this.flock.splice(idx, 1);
         }
@@ -175,7 +210,6 @@ export default class BoidsManager {
 
     if (this.oldParams.alignmentRange != this.params.alignmentRange) {
       if (boid.alignmentBoundaryMesh) {
-        console.log("changing alignment");
         // find the diff in radius and scale according to that
         const scale =
           this.params.alignmentRange / this.oldParams.alignmentRange;
@@ -212,12 +246,7 @@ export default class BoidsManager {
   }
 
   private createNewBoid(): Boid {
-    const geo = new THREE.ConeGeometry(1.2, 3.2);
-    geo.rotateX(Math.PI * -0.5);
-
-    const mat = new THREE.MeshNormalMaterial();
-
-    const boid = new Boid(geo, mat);
+    const boid = new Boid();
     return boid;
   }
 }

@@ -3,12 +3,8 @@ import { getRandomVector } from "../lib/utils";
 import { boundingDim } from "../world/run";
 import Boid0 from "./Boid";
 
-import { GLTFLoader } from "three/examples/jsm/Addons.js";
-
 import Projectile from "./Projectile";
-
-const clock = new THREE.Clock();
-let oldtime = clock.getElapsedTime();
+import TrailParticle from "../particles/TrailParticle";
 
 export type predatorParamsType = {
   maxSpeed: number;
@@ -26,6 +22,11 @@ export default class Predator {
   targetQuaternion: THREE.Quaternion;
   mainProjectileArr: Projectile[];
   scene: THREE.Scene;
+  particles: TrailParticle[];
+
+  private lastParticleTime: number = 0;
+  private lastProjectileTime: number = 0;
+  private static clock: THREE.Clock = new THREE.Clock(); // Make clock static and shared
 
   constructor(
     idx: number,
@@ -37,6 +38,7 @@ export default class Predator {
   ) {
     this.scene = scene;
     this.idx = idx;
+    this.particles = [];
 
     this.mesh = new THREE.Mesh(geo, mat);
 
@@ -60,13 +62,55 @@ export default class Predator {
   }
 
   move(params: predatorParamsType) {
+    const currentTime = Predator.clock.getElapsedTime();
+
+    for (let particle of this.particles) {
+      if (!this.scene.children.includes(particle.mesh)) {
+        // remove this from array
+        const idx = this.particles.indexOf(particle);
+        this.particles.splice(idx, 1);
+      }
+      particle.animate();
+    }
+
+    const particle_delay = 0.01;
+    if (currentTime - this.lastParticleTime > particle_delay) {
+      const offset = this.velocity
+        .clone()
+        .normalize()
+        .negate()
+        .multiplyScalar(2.5);
+
+      const particle = new TrailParticle(
+        this.scene,
+        this.mesh.position.clone().add(offset)
+      );
+      this.particles.push(particle);
+
+      this.lastParticleTime = currentTime;
+    }
+
     const chase = this.chase(params);
+
+    // console.log("delay " , delay);
+    // if (delay > 2) {
+    // particleoldtime = currtime;
+
+    // const particle = new THREE.Mesh(
+    //   new THREE.SphereGeometry(1),
+    //   new THREE.MeshBasicMaterial({ color: 0xffff00 })
+    // );
+    // particle.position.copy(this.mesh.position.clone());
+    // this.scene.add(particle);
+    // }
 
     chase && this.velocity.add(chase);
     this.makeRotation();
 
     this.mesh.position.add(this.velocity);
     this.stayInsideBoundary(0.04);
+
+    // this.particles.animate();
   }
 
   makeRotation() {
@@ -83,6 +127,7 @@ export default class Predator {
 
   chase(params: predatorParamsType) {
     let nearestBoidIdx = 0;
+    if (this.flock.length == 0) return;
     let minDistance = this.mesh.position.distanceTo(
       this.flock[nearestBoidIdx].mesh.position
     );
@@ -112,14 +157,22 @@ export default class Predator {
     steer.multiplyScalar(params.chasingFactor);
 
     // if target in hunting range then shoot projectiles
-    const currentTime = clock.getElapsedTime();
-    const delta = currentTime - oldtime;
-    if (minDistance < 20 && this.mag.length > 0 && delta > 2) {
+    const currentTime = Predator.clock.getElapsedTime();
+    const shootdelay = 2;
+    const delta = currentTime - this.lastProjectileTime;
+    if (minDistance < 30 && this.mag.length > 0 && delta > shootdelay) {
       //   // then shoot
-      oldtime = currentTime;
+      this.lastProjectileTime = currentTime;
       const projectile = this.mag.pop() as Projectile;
       projectile?.setTarget(target);
-      projectile.mesh.position.copy(this.mesh.position.clone());
+
+      // offsetDirection
+      const offset = new THREE.Vector3()
+        .copy(this.velocity)
+        .normalize()
+        .multiplyScalar(5);
+
+      projectile.mesh.position.copy(this.mesh.position.clone().add(offset));
       this.mainProjectileArr.push(projectile);
       this.scene.add(projectile.mesh);
     }

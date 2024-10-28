@@ -6,13 +6,15 @@ export default class Projectile {
   mesh: THREE.Mesh;
   createdBy: Predator;
   target?: Boid;
+  hit: boolean;
   velocity: THREE.Vector3;
   scene: THREE.Scene;
 
   constructor(predator: Predator, scene: THREE.Scene) {
     this.scene = scene;
-    const geo = new THREE.SphereGeometry(0.5);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    this.hit = false;
+    const geo = new THREE.SphereGeometry(0.8);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x22ffff });
     this.mesh = new THREE.Mesh(geo, mat);
     this.createdBy = predator;
     this.velocity = predator.velocity.clone().addScalar(2);
@@ -29,11 +31,16 @@ export default class Projectile {
 
       if (distance < 1) {
         // destroy
+        if (!this.hit) {
+          this.target.health -= 3;
+          this.hit = true;
+        }
+
         this.mesh.geometry.dispose();
         this.scene.remove(this.mesh);
 
-        this.target.mesh.geometry.dispose();
-        this.scene.remove(this.target.mesh);
+        // this.target.mesh.geometry.dispose();
+        // this.scene.remove(this.target.mesh);
       }
 
       // vector to target
@@ -43,7 +50,7 @@ export default class Projectile {
       );
       targetVec.normalize().multiplyScalar(1.5); // chasing factor => more than
 
-      const steer = targetVec.sub(this.velocity).multiplyScalar(0.08); // steering factor => less utna curve
+      const steer = targetVec.sub(this.velocity).multiplyScalar(0.3); // steering factor => less utna curve
 
       this.velocity.add(steer);
       this.velocity.clampLength(0, 2.0);

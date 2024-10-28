@@ -3,6 +3,10 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 import { GUI } from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/Addons.js";
+
 export class SceneInit {
   w = window.innerWidth;
   h = window.innerHeight;
@@ -13,6 +17,9 @@ export class SceneInit {
   statsPanel: Stats;
   orbctrls: OrbitControls;
   gui: GUI;
+  effectComposer: EffectComposer;
+  renderPass: RenderPass;
+  urbp: UnrealBloomPass;
 
   constructor(canvas: HTMLCanvasElement) {
     this.re = new THREE.WebGLRenderer({
@@ -21,6 +28,7 @@ export class SceneInit {
     });
     this.re.setSize(this.w, this.h);
 
+    this.effectComposer = new EffectComposer(this.re as THREE.WebGLRenderer);
     const fov = 75;
     const aspect = this.w / this.h;
     const far = 1000;
@@ -30,6 +38,10 @@ export class SceneInit {
 
     this.scene = new THREE.Scene();
 
+    this.renderPass = new RenderPass(this.scene, this.cam);
+    this.effectComposer.addPass(this.renderPass);
+    this.urbp = new UnrealBloomPass(new THREE.Vector2(1024, 1024), 1, 0, 0);
+    this.effectComposer.addPass(this.urbp);
     this.statsPanel = new Stats();
     this.gui = new GUI();
     this.orbctrls = new OrbitControls(this.cam, canvas);
@@ -49,6 +61,7 @@ export class SceneInit {
   }
 
   render() {
-    this.re.render(this.scene, this.cam);
+    // this.re.render(this.scene, this.cam);
+    this.effectComposer.render();
   }
 }
