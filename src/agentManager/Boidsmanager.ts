@@ -6,6 +6,8 @@ import { boidParamsType } from "../agents/Boid";
 import Projectile from "../agents/Projectile";
 import ExplosionParticle from "../particles/ExplosionParticle";
 
+import type { repulsionSphere } from "../world/run";
+
 export default class BoidsManager {
   flock: Boid[];
   predators: Predator[];
@@ -19,12 +21,14 @@ export default class BoidsManager {
   separationHelperGeo: THREE.CircleGeometry;
   alignmentHelperGeo: THREE.CircleGeometry;
   cohesionHelperGeo: THREE.CircleGeometry;
+  repulsionPoints: repulsionSphere[];
 
   constructor(
     scene: THREE.Scene,
     quantity: number,
     params: boidParamsType,
-    predatorParams: predatorParamsType
+    predatorParams: predatorParamsType,
+    repulsionPoints: repulsionSphere[]
   ) {
     this.projectiles = [];
     this.explosionParticles = [];
@@ -39,6 +43,7 @@ export default class BoidsManager {
     this.separationHelperGeo = new THREE.CircleGeometry(params.separationRange);
     this.alignmentHelperGeo = new THREE.CircleGeometry(params.alignmentRange);
     this.cohesionHelperGeo = new THREE.CircleGeometry(params.cohesionRange);
+    this.repulsionPoints = repulsionPoints;
   }
 
   private fillOtherBoids() {
@@ -114,6 +119,13 @@ export default class BoidsManager {
     return newFlock;
   }
 
+  addNewBoid() {
+    const newBoid = this.createNewBoid();
+    this.flock.push(newBoid);
+
+    this.scene.add(newBoid.mesh);
+  }
+
   updateExplosionParticle() {
     for (let i = 0; i < this.explosionParticles.length; i++) {
       const particle = this.explosionParticles[i];
@@ -151,7 +163,7 @@ export default class BoidsManager {
           this.flock.splice(idx, 1);
         }
 
-      boid.move(this.params);
+      boid.move(this.params, this.repulsionPoints);
 
       if (idx == 0) {
         this.updateBoundaries(boid);

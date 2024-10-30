@@ -11,7 +11,7 @@ export class SceneInit {
   w = window.innerWidth;
   h = window.innerHeight;
 
-  re: THREE.Renderer;
+  re: THREE.WebGLRenderer;
   cam: THREE.PerspectiveCamera;
   scene: THREE.Scene;
   statsPanel: Stats;
@@ -27,6 +27,7 @@ export class SceneInit {
       antialias: true,
     });
     this.re.setSize(this.w, this.h);
+    this.re.shadowMap.enabled = true;
 
     this.effectComposer = new EffectComposer(this.re as THREE.WebGLRenderer);
     const fov = 75;
@@ -40,7 +41,7 @@ export class SceneInit {
 
     this.renderPass = new RenderPass(this.scene, this.cam);
     this.effectComposer.addPass(this.renderPass);
-    this.urbp = new UnrealBloomPass(new THREE.Vector2(1024, 1024), 1, 0, 0);
+    this.urbp = new UnrealBloomPass(new THREE.Vector2(500, 500), 0.3, 0, 0);
     this.effectComposer.addPass(this.urbp);
     this.statsPanel = new Stats();
     this.gui = new GUI();
@@ -61,7 +62,6 @@ export class SceneInit {
   }
 
   render() {
-    // this.re.render(this.scene, this.cam);
     this.effectComposer.render();
   }
 }

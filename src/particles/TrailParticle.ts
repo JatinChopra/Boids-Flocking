@@ -7,12 +7,18 @@ export default class TrailParticle {
   maxSize: number;
   minSize: number;
 
-  constructor(scene: THREE.Scene, position: THREE.Vector3) {
+  constructor(
+    scene: THREE.Scene,
+    position: THREE.Vector3,
+    maxSize: number,
+    minsize: number,
+    life: number
+  ) {
     this.scene = scene;
-    this.maxSize = 1.5;
-    this.minSize = 0.5;
+    this.maxSize = maxSize;
+    this.minSize = minsize;
     this.mesh = this.createParticle(position);
-    this.life = 3;
+    this.life = life; // 15
   }
 
   animate() {
@@ -32,6 +38,7 @@ export default class TrailParticle {
       new THREE.SphereGeometry(this.maxSize),
       new THREE.MeshStandardMaterial({ color: 0x00ffff })
     );
+    particle.castShadow = true;
 
     this.scene.add(particle);
 

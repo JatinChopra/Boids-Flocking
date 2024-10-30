@@ -18,8 +18,9 @@ export default class ExplosionParticles {
     this.position = pos;
 
     this.mesh = this.createParticleObject();
-    this.life = 100;
-    (this.maxDistance = Math.random() * 10 + 5), (this.maxSize = 4);
+    this.life = 200;
+    this.maxDistance = Math.random() * 10 + 5;
+    this.maxSize = 4;
     this.minSize = 0.5;
   }
 
@@ -35,18 +36,8 @@ export default class ExplosionParticles {
     this.life -= 1;
   }
 
-  //   createParticles(num: number): explosionParticle[] {
-  //     const particleList: explosionParticle[] = [];
-  //     for (let i = 0; i < num; i++) {
-  //       const particle = this.createParticleObject();
-  //       particleList.push(particle);
-  //       this.scene.add(particle.mesh);
-  //     }
-  //     return particleList;
-  //   }
-
   createParticleObject(): THREE.Mesh {
-    const radius = 1;
+    const radius = Math.random() * 1 + 0.5;
     const geometry = new THREE.SphereGeometry(radius);
     const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const mesh = new THREE.Mesh(geometry, material);

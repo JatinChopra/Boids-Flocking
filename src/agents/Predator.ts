@@ -7,6 +7,7 @@ import Projectile from "./Projectile";
 import TrailParticle from "../particles/TrailParticle";
 
 export type predatorParamsType = {
+  quantity: number;
   maxSpeed: number;
   chasingRange: number;
   chasingFactor: number;
@@ -73,7 +74,7 @@ export default class Predator {
       particle.animate();
     }
 
-    const particle_delay = 0.01;
+    const particle_delay = 0.005;
     if (currentTime - this.lastParticleTime > particle_delay) {
       const offset = this.velocity
         .clone()
@@ -83,7 +84,10 @@ export default class Predator {
 
       const particle = new TrailParticle(
         this.scene,
-        this.mesh.position.clone().add(offset)
+        this.mesh.position.clone().add(offset),
+        0.5,
+        0.1,
+        15
       );
       this.particles.push(particle);
 
@@ -92,25 +96,13 @@ export default class Predator {
 
     const chase = this.chase(params);
 
-    // console.log("delay " , delay);
-    // if (delay > 2) {
-    // particleoldtime = currtime;
-
-    // const particle = new THREE.Mesh(
-    //   new THREE.SphereGeometry(1),
-    //   new THREE.MeshBasicMaterial({ color: 0xffff00 })
-    // );
-    // particle.position.copy(this.mesh.position.clone());
-    // this.scene.add(particle);
-    // }
-
     chase && this.velocity.add(chase);
     this.makeRotation();
 
     this.mesh.position.add(this.velocity);
-    this.stayInsideBoundary(0.04);
-
-    // this.particles.animate();
+    // this.stayInsideBoundary(0.04);
+    this.stayInsideBox(0.04);
+    this.stayAbovePlane(0.04);
   }
 
   makeRotation() {
@@ -186,9 +178,12 @@ export default class Predator {
     for (let axis = 0; axis < 3; axis++) {
       const pos = this.mesh.position.getComponent(axis);
 
-      const bounds = boundingDim.getComponent(axis) / 2 - innerBoundary;
+      let bounds = boundingDim.getComponent(axis) / 2 - innerBoundary;
 
       if (pos > bounds) {
+        if (axis == 1) {
+          bounds = boundingDim.getComponent(axis) - innerBoundary;
+        }
         this.velocity.setComponent(
           axis,
           this.velocity.getComponent(axis) - turnaroundFactor
@@ -200,6 +195,43 @@ export default class Predator {
           axis,
           this.velocity.getComponent(axis) + turnaroundFactor
         );
+      }
+    }
+  }
+  stayAbovePlane(turnaroundFactor: number) {
+    const tf = 1;
+    if (this.mesh.position.y < -10) {
+      // console.log("stopping");
+      this.velocity.setComponent(1, this.velocity.getComponent(1) + 1);
+    }
+  }
+
+  stayInsideBox(turnaroundFactor: number) {
+    for (let axis = 0; axis < 3; axis++) {
+      let bound = boundingDim.getComponent(axis) / 2;
+
+      const poscomponent = this.mesh.position.getComponent(axis);
+
+      if (axis == 1 && poscomponent > boundingDim.getComponent(axis)) {
+        this.velocity.setComponent(
+          axis,
+          this.velocity.getComponent(axis) - turnaroundFactor
+        );
+      }
+
+      if (poscomponent > bound && axis != 1) {
+        this.velocity.setComponent(
+          axis,
+          this.velocity.getComponent(axis) - turnaroundFactor
+        );
+      }
+
+      if (poscomponent < -bound) {
+        if (axis != 1)
+          this.velocity.setComponent(
+            axis,
+            this.velocity.getComponent(axis) + turnaroundFactor
+          );
       }
     }
   }

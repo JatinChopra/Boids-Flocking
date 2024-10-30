@@ -5,11 +5,21 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const world = run(canvasRef.current as HTMLCanvasElement);
+    const { world, group0 } = run(canvasRef.current as HTMLCanvasElement);
+
+    const keyPressHandler = (e: KeyboardEvent) => {
+      console.log(e.key);
+      if (e.key == "n") {
+        group0.addNewBoid();
+      }
+    };
+
+    window.addEventListener("keypress", keyPressHandler);
 
     return () => {
       world.gui.destroy();
       world.orbctrls.dispose();
+      window.removeEventListener("keypress", keyPressHandler);
     };
   });
 

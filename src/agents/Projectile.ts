@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import Predator from "./Predator";
 import Boid from "./Boid";
+import TrailParticle from "../particles/TrailParticle";
 
 export default class Projectile {
   mesh: THREE.Mesh;
@@ -9,15 +10,21 @@ export default class Projectile {
   hit: boolean;
   velocity: THREE.Vector3;
   scene: THREE.Scene;
+  particles: TrailParticle[];
+  lastParticleTime: number;
+
+  static clock = new THREE.Clock();
 
   constructor(predator: Predator, scene: THREE.Scene) {
     this.scene = scene;
     this.hit = false;
     const geo = new THREE.SphereGeometry(0.8);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x22ffff });
+    const mat = new THREE.MeshStandardMaterial({ color: 0xfca103 });
     this.mesh = new THREE.Mesh(geo, mat);
     this.createdBy = predator;
     this.velocity = predator.velocity.clone().addScalar(2);
+    this.particles = [];
+    this.lastParticleTime = Projectile.clock.getElapsedTime();
   }
 
   setTarget(boid: Boid) {
@@ -26,6 +33,16 @@ export default class Projectile {
 
   shoot() {
     // distance to target
+
+    for (let particle of this.particles) {
+      if (!this.scene.children.includes(particle.mesh)) {
+        // remove this from array
+        const idx = this.particles.indexOf(particle);
+        this.particles.splice(idx, 1);
+      }
+      particle.animate();
+    }
+
     if (this.target) {
       const distance = this.mesh.position.distanceTo(this.target.mesh.position);
 
@@ -48,12 +65,12 @@ export default class Projectile {
         this.target.mesh.position,
         this.mesh.position
       );
-      targetVec.normalize().multiplyScalar(1.5); // chasing factor => more than
+      targetVec.normalize().multiplyScalar(2.0); // chasing factor => more than
 
-      const steer = targetVec.sub(this.velocity).multiplyScalar(0.3); // steering factor => less utna curve
+      const steer = targetVec.sub(this.velocity).multiplyScalar(0.5); // steering factor => less utna curve
 
       this.velocity.add(steer);
-      this.velocity.clampLength(0, 2.0);
+      this.velocity.clampLength(0, 2.4);
 
       this.mesh.position.add(this.velocity);
     }
