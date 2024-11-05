@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { getRandomVector } from "../lib/utils";
 import { boundingDim } from "../world/run";
-import Boid0 from "./Boid";
+import Boid from "./Boid";
 
 import Projectile from "./Projectile";
 import TrailParticle from "../particles/TrailParticle";
@@ -17,7 +17,7 @@ export default class Predator {
   idx: number;
   mesh: THREE.Mesh;
   velocity: THREE.Vector3;
-  flock: Boid0[];
+  flock: Boid[];
   mag: Projectile[];
   rotationMatrix: THREE.Matrix4;
   targetQuaternion: THREE.Quaternion;
@@ -25,7 +25,6 @@ export default class Predator {
   scene: THREE.Scene;
   particles: TrailParticle[];
 
-  private lastParticleTime: number = 0;
   private lastProjectileTime: number = 0;
   private static clock: THREE.Clock = new THREE.Clock(); // Make clock static and shared
 
@@ -33,7 +32,7 @@ export default class Predator {
     idx: number,
     geo: THREE.BufferGeometry,
     mat: THREE.Material,
-    flock: Boid0[],
+    flock: Boid[],
     mainProjectileArr: Projectile[],
     scene: THREE.Scene
   ) {
@@ -43,7 +42,6 @@ export default class Predator {
 
     this.mesh = new THREE.Mesh(geo, mat);
 
-    // this.mesh.position.z = 100;
     this.velocity = getRandomVector();
     this.velocity.z = 0;
     this.flock = flock;
@@ -63,8 +61,6 @@ export default class Predator {
   }
 
   move(params: predatorParamsType) {
-    const currentTime = Predator.clock.getElapsedTime();
-
     for (let particle of this.particles) {
       if (!this.scene.children.includes(particle.mesh)) {
         // remove this from array
@@ -74,25 +70,23 @@ export default class Predator {
       particle.animate();
     }
 
-    const particle_delay = 0.005;
-    if (currentTime - this.lastParticleTime > particle_delay) {
-      const offset = this.velocity
-        .clone()
-        .normalize()
-        .negate()
-        .multiplyScalar(2.5);
+    // if (currentTime - this.lastParticleTime > particle_delay) {
+    const offset = this.velocity
+      .clone()
+      .normalize()
+      .negate()
+      .multiplyScalar(2.5);
 
-      const particle = new TrailParticle(
-        this.scene,
-        this.mesh.position.clone().add(offset),
-        0.5,
-        0.1,
-        15
-      );
-      this.particles.push(particle);
+    const particle = new TrailParticle(
+      this.scene,
+      this.mesh.position.clone().add(offset),
+      2,
+      0,
+      5
+    );
+    this.particles.push(particle);
 
-      this.lastParticleTime = currentTime;
-    }
+    // }
 
     const chase = this.chase(params);
 
@@ -102,8 +96,10 @@ export default class Predator {
     this.mesh.position.add(this.velocity);
     // this.stayInsideBoundary(0.04);
     this.stayInsideBox(0.04);
-    this.stayAbovePlane(0.04);
+    this.stayAbovePlane();
   }
+
+  separation() {}
 
   makeRotation() {
     this.rotationMatrix.lookAt(
@@ -141,8 +137,6 @@ export default class Predator {
       this.mesh.position
     );
 
-    const norm = minDistance / params.chasingRange;
-
     desiredVector.normalize().multiplyScalar(params.maxSpeed);
 
     const steer = desiredVector.sub(this.velocity);
@@ -150,7 +144,7 @@ export default class Predator {
 
     // if target in hunting range then shoot projectiles
     const currentTime = Predator.clock.getElapsedTime();
-    const shootdelay = 2;
+    const shootdelay = Math.random() * 5 + 3;
     const delta = currentTime - this.lastProjectileTime;
     if (minDistance < 30 && this.mag.length > 0 && delta > shootdelay) {
       //   // then shoot
@@ -166,7 +160,13 @@ export default class Predator {
 
       projectile.mesh.position.copy(this.mesh.position.clone().add(offset));
       this.mainProjectileArr.push(projectile);
+
       this.scene.add(projectile.mesh);
+      console.log("shoot-now");
+
+      const audio = new Audio();
+      audio.src = "./laserShoot.wav";
+      audio.play();
     }
 
     return steer;
@@ -198,8 +198,7 @@ export default class Predator {
       }
     }
   }
-  stayAbovePlane(turnaroundFactor: number) {
-    const tf = 1;
+  stayAbovePlane() {
     if (this.mesh.position.y < -10) {
       // console.log("stopping");
       this.velocity.setComponent(1, this.velocity.getComponent(1) + 1);

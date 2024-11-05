@@ -1,5 +1,16 @@
 import * as THREE from "three";
 
+const colors = [
+  0xffff00, // Yellow
+  0xff6347, // Tomato
+  0xffd700, // Gold
+];
+
+function getColorfulMaterial() {
+  const randomIndex = Math.floor(Math.random() * colors.length);
+  return new THREE.MeshBasicMaterial({ color: colors[randomIndex] });
+}
+
 export default class ExplosionParticles {
   position: THREE.Vector3;
   velocity: THREE.Vector3;
@@ -18,7 +29,7 @@ export default class ExplosionParticles {
     this.position = pos;
 
     this.mesh = this.createParticleObject();
-    this.life = 200;
+    this.life = 30;
     this.maxDistance = Math.random() * 10 + 5;
     this.maxSize = 4;
     this.minSize = 0.5;
@@ -39,7 +50,7 @@ export default class ExplosionParticles {
   createParticleObject(): THREE.Mesh {
     const radius = Math.random() * 1 + 0.5;
     const geometry = new THREE.SphereGeometry(radius);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const material = getColorfulMaterial();
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.copy(this.position); // set the initia pos
     this.scene.add(mesh);

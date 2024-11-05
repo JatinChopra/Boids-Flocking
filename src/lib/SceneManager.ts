@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { GUI } from "dat.gui";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+// import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -15,7 +15,8 @@ export class SceneInit {
   cam: THREE.PerspectiveCamera;
   scene: THREE.Scene;
   statsPanel: Stats;
-  orbctrls: OrbitControls;
+  sound: THREE.Audio;
+  // orbctrls: OrbitControls;
   gui: GUI;
   effectComposer: EffectComposer;
   renderPass: RenderPass;
@@ -26,26 +27,34 @@ export class SceneInit {
       canvas: canvas,
       antialias: true,
     });
+    this.re.setPixelRatio(window.devicePixelRatio);
     this.re.setSize(this.w, this.h);
+
     this.re.shadowMap.enabled = true;
 
     this.effectComposer = new EffectComposer(this.re as THREE.WebGLRenderer);
     const fov = 75;
     const aspect = this.w / this.h;
-    const far = 1000;
+    const far = 10000;
     const near = 0.01;
     this.cam = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    this.cam.position.set(0, 0, 5);
 
     this.scene = new THREE.Scene();
 
+    // create an AudioListener and add it to the camera
+    const listener = new THREE.AudioListener();
+    this.cam.add(listener);
+
+    // create a global audio source
+    this.sound = new THREE.Audio(listener);
+
     this.renderPass = new RenderPass(this.scene, this.cam);
     this.effectComposer.addPass(this.renderPass);
-    this.urbp = new UnrealBloomPass(new THREE.Vector2(500, 500), 0.3, 0, 0);
+    this.urbp = new UnrealBloomPass(new THREE.Vector2(1024, 1024), 0.3, 0, 0);
     this.effectComposer.addPass(this.urbp);
     this.statsPanel = new Stats();
     this.gui = new GUI();
-    this.orbctrls = new OrbitControls(this.cam, canvas);
+    // this.orbctrls = new OrbitControls(this.cam, canvas);
 
     document.body.appendChild(this.statsPanel.dom);
   }

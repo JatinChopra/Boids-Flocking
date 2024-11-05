@@ -1,9 +1,8 @@
 import * as THREE from "three";
 
 import { getRandomVector } from "../lib/utils";
-import { boundingDim, repulsionSphere } from "../world/run";
+import { repulsionSphere } from "../world/run";
 import Predator0 from "./Predator";
-import ExplosionParticles from "../particles/ExplosionParticle";
 
 export type boidParamsType = {
   z_movement: boolean;
@@ -42,16 +41,27 @@ export default class Boid {
   rotationMatrix: THREE.Matrix4;
   targetQuaternion: THREE.Quaternion;
 
-  static boidGeo = new THREE.ConeGeometry(1.2, 3.2).rotateX(Math.PI * -0.5);
+  boundingDim: THREE.Vector3;
+  boundingArea: "dome" | "box";
+  escapeRange: number;
 
-  static materialOne = new THREE.MeshStandardMaterial({ color: 0xff03d1 });
-  static materialTwo = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-  static materialThree = new THREE.MeshStandardMaterial({ color: 0xff9100 });
+  constructor(
+    geo: THREE.BufferGeometry,
+    mat: THREE.Material,
 
-  constructor() {
-    this.mesh = new THREE.Mesh(Boid.boidGeo, Boid.materialOne);
+    boundingDim: THREE.Vector3,
+    boundingArea: "dome" | "box",
+    escapeRange: number
+  ) {
+    this.escapeRange = escapeRange;
+    this.boundingDim = boundingDim;
+    this.boundingArea = boundingArea;
+    this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.castShadow = true;
-    this.mesh.position.copy(getRandomVector().multiplyScalar(100));
+    const pos = getRandomVector().multiplyScalar(20);
+    pos.setComponent(1, Math.abs(pos.getComponent(1)));
+    // this.mesh.position.set(0, 150, 0);
+    this.mesh.position.copy(pos);
     this.velocity = getRandomVector();
     this.acceleration = new THREE.Vector3(0, 0, 0);
     this.health = 3;
@@ -73,8 +83,6 @@ export default class Boid {
 
     this.acceleration.set(0, 0, 0);
 
-    this.avoidObstacles(repulsionPoints);
-
     const separation = this.separation(
       boidParams.separationRange,
       boidParams.separationFactor
@@ -95,6 +103,9 @@ export default class Boid {
     cohesion && this.acceleration.add(cohesion);
 
     this.velocity.add(this.acceleration);
+
+    this.avoidObstacles(repulsionPoints);
+
     this.mesh.position.add(this.velocity);
 
     this.escape(boidParams.escapeRange, boidParams.escapeFactor);
@@ -105,39 +116,43 @@ export default class Boid {
 
     // stayinside boundaries
     // this.stayInsideBoundary(boidParams.turnaroundFactor);
-    // this.stayInsideSphere(boidParams.turnaroundFactor);
-    this.stayInsideBox(boidParams.turnaroundFactor);
+    if (this.boundingArea == "box") {
+      this.stayInsideBox(boidParams.turnaroundFactor);
+    }
+    if (this.boundingArea == "dome") {
+      this.stayInsideSphere(boidParams.turnaroundFactor);
+    }
 
-    this.stayAbovePlane(boidParams.turnaroundFactor);
+    this.stayAbovePlane();
   }
 
   avoidObstacles(repulsionPoints: repulsionSphere[]) {
     for (let i = 0; i < repulsionPoints.length; i++) {
-      const additionalOffset = 1;
+      const additionalOffset = 2;
 
       const point = repulsionPoints[i];
-      const distance = this.mesh.position.distanceTo(point.mesh.position);
+
+      const pos = new THREE.Vector3();
+      point.mesh.getWorldPosition(pos);
+      const distance = this.mesh.position.distanceTo(pos);
 
       if (distance < point.radius + additionalOffset) {
         const oppositeVector = new THREE.Vector3()
-          .subVectors(this.mesh.position, point.mesh.position)
+          .subVectors(this.mesh.position, pos)
           .normalize()
-          .multiplyScalar(0.2);
+          .multiplyScalar(10);
 
-        this.velocity.add(oppositeVector);
+        const steer = new THREE.Vector3().subVectors(
+          oppositeVector,
+          this.velocity
+        );
+
+        this.velocity.add(steer.multiplyScalar(0.05));
       }
     }
   }
 
   checkHealth() {
-    if (this.health == 2) {
-      this.mesh.material = Boid.materialTwo;
-    }
-
-    if (this.health == 1) {
-      this.mesh.material = Boid.materialThree;
-    }
-
     if (this.health <= 0) {
       // create an explosion here
 
@@ -273,8 +288,7 @@ export default class Boid {
     this.mesh.quaternion.rotateTowards(this.targetQuaternion, 0.1);
   }
 
-  stayAbovePlane(turnaroundFactor: number) {
-    const tf = 1;
+  stayAbovePlane() {
     if (this.mesh.position.y < 0) {
       // console.log("stopping");
       this.velocity.setComponent(1, this.velocity.getComponent(1) + 1);
@@ -287,7 +301,7 @@ export default class Boid {
 
     //  vel + inward force
 
-    const maxDistance = 120 - 20; // 100 radius
+    const maxDistance = this.boundingDim.getComponent(0) - 20; // 100 radius
     const center = new THREE.Vector3(0, 0, 0);
     const distance = this.mesh.position.distanceTo(center);
 
@@ -302,11 +316,11 @@ export default class Boid {
 
   stayInsideBox(turnaroundFactor: number) {
     for (let axis = 0; axis < 3; axis++) {
-      let bound = boundingDim.getComponent(axis) / 2;
+      let bound = this.boundingDim.getComponent(axis) / 2;
 
       const poscomponent = this.mesh.position.getComponent(axis);
 
-      if (axis == 1 && poscomponent > boundingDim.getComponent(axis)) {
+      if (axis == 1 && poscomponent > this.boundingDim.getComponent(axis)) {
         this.velocity.setComponent(
           axis,
           this.velocity.getComponent(axis) - turnaroundFactor
@@ -335,7 +349,7 @@ export default class Boid {
 
     for (let axis = 0; axis < 3; axis++) {
       const pos = this.mesh.position.getComponent(axis);
-      let bounds = boundingDim.getComponent(axis) / 2 - innerBoundary;
+      let bounds = this.boundingDim.getComponent(axis) / 2 - innerBoundary;
 
       if (pos > bounds) {
         this.velocity.setComponent(

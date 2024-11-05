@@ -6,6 +6,7 @@ export default class TrailParticle {
   life: number;
   maxSize: number;
   minSize: number;
+  fullLife: number;
 
   constructor(
     scene: THREE.Scene,
@@ -14,6 +15,7 @@ export default class TrailParticle {
     minsize: number,
     life: number
   ) {
+    this.fullLife = life;
     this.scene = scene;
     this.maxSize = maxSize;
     this.minSize = minsize;
@@ -27,7 +29,11 @@ export default class TrailParticle {
       this.scene.remove(this.mesh);
     }
 
-    const scaleFactor = (this.life * 20) / 80;
+    // const scaleFactor = (this.life * 20) / 100;
+    let scaleFactor = this.life / this.fullLife;
+
+    // const scaleFactor = 1;
+
     this.mesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
     this.life -= 1;
   }
@@ -36,7 +42,8 @@ export default class TrailParticle {
   createParticle(position: THREE.Vector3): THREE.Mesh {
     const particle = new THREE.Mesh(
       new THREE.SphereGeometry(this.maxSize),
-      new THREE.MeshStandardMaterial({ color: 0x00ffff })
+      // new THREE.MeshStandardMaterial({ color: 0x00ffff })
+      new THREE.MeshStandardMaterial({ color: 0xd7f705 })
     );
     particle.castShadow = true;
 

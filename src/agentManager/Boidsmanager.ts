@@ -22,21 +22,38 @@ export default class BoidsManager {
   alignmentHelperGeo: THREE.CircleGeometry;
   cohesionHelperGeo: THREE.CircleGeometry;
   repulsionPoints: repulsionSphere[];
+  escapeRange?: number;
 
   constructor(
     scene: THREE.Scene,
     quantity: number,
     params: boidParamsType,
     predatorParams: predatorParamsType,
-    repulsionPoints: repulsionSphere[]
+    repulsionPoints: repulsionSphere[],
+    geo: THREE.BufferGeometry,
+    mat: THREE.Material,
+    boundingDim: THREE.Vector3,
+    boundingArea: "dome" | "box",
+    escapeRange?: number
   ) {
+    if (escapeRange) {
+      this.escapeRange = escapeRange;
+    } else {
+      this.escapeRange = 18;
+    }
     this.projectiles = [];
     this.explosionParticles = [];
     this.scene = scene;
     this.params = params;
     this.oldParams = { ...params };
     this.predatorParams = predatorParams;
-    this.flock = this.createFlock(quantity); // create all the boids
+    this.flock = this.createFlock(
+      quantity,
+      geo,
+      mat,
+      boundingDim,
+      boundingArea
+    ); // create all the boids
     this.predators = [];
     this.fillOtherBoids();
 
@@ -52,10 +69,17 @@ export default class BoidsManager {
     }
   }
 
+  assignPredator(predator: Predator) {
+    // this.predators.push(predator);
+    for (let i = 0; i < this.flock.length; i++) {
+      this.flock[i].predators.push(predator);
+    }
+  }
+
   createPredator(quantity: number) {
-    const geo = new THREE.ConeGeometry(2, 5);
+    const geo = new THREE.ConeGeometry(2, 5, 4);
     geo.rotateX(Math.PI * -0.5);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0x0367fc });
 
     for (let i = 0; i < quantity; i++) {
       const predator = new Predator(
@@ -103,10 +127,23 @@ export default class BoidsManager {
     }
   }
 
-  private createFlock(quantity: number) {
+  private createFlock(
+    quantity: number,
+    geo: THREE.BufferGeometry,
+    mat: THREE.Material,
+
+    boundingDim: THREE.Vector3,
+    boundingArea: "dome" | "box"
+  ) {
     const newFlock: Boid[] = [];
     for (let i = 0; i < quantity; i++) {
-      const newBoid = this.createNewBoid();
+      const newBoid = this.createNewBoid(
+        geo,
+        mat,
+        boundingDim,
+        boundingArea,
+        this.escapeRange || 18
+      );
       newFlock.push(newBoid);
       this.scene.add(newBoid.mesh);
 
@@ -117,13 +154,6 @@ export default class BoidsManager {
     }
 
     return newFlock;
-  }
-
-  addNewBoid() {
-    const newBoid = this.createNewBoid();
-    this.flock.push(newBoid);
-
-    this.scene.add(newBoid.mesh);
   }
 
   updateExplosionParticle() {
@@ -147,6 +177,10 @@ export default class BoidsManager {
     for (let boid of this.flock) {
       if (this.scene.children)
         if (boid.health <= 0) {
+          const audio = new Audio();
+          audio.src = "./explosion.wav";
+          audio.play();
+
           // create explosion particles
           for (let i = 0; i < 25; i++) {
             const particle = new ExplosionParticle(
@@ -257,8 +291,14 @@ export default class BoidsManager {
     boid.alignmentBoundaryMesh?.position.copy(boid.mesh.position);
   }
 
-  private createNewBoid(): Boid {
-    const boid = new Boid();
+  private createNewBoid(
+    geo: THREE.BufferGeometry,
+    mat: THREE.Material,
+    boundingDim: THREE.Vector3,
+    boundingArea: "dome" | "box",
+    escapeRange: number
+  ): Boid {
+    const boid = new Boid(geo, mat, boundingDim, boundingArea, escapeRange);
     return boid;
   }
 }

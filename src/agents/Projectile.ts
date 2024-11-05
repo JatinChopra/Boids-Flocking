@@ -12,14 +12,19 @@ export default class Projectile {
   scene: THREE.Scene;
   particles: TrailParticle[];
   lastParticleTime: number;
+  shootSoundPlayed: boolean;
+  explosionSoundPlayed: boolean;
 
   static clock = new THREE.Clock();
 
   constructor(predator: Predator, scene: THREE.Scene) {
     this.scene = scene;
+    this.shootSoundPlayed = false;
+    this.explosionSoundPlayed = false;
+
     this.hit = false;
     const geo = new THREE.SphereGeometry(0.8);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xfca103 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0xff8800 });
     this.mesh = new THREE.Mesh(geo, mat);
     this.createdBy = predator;
     this.velocity = predator.velocity.clone().addScalar(2);
@@ -67,7 +72,7 @@ export default class Projectile {
       );
       targetVec.normalize().multiplyScalar(2.0); // chasing factor => more than
 
-      const steer = targetVec.sub(this.velocity).multiplyScalar(0.5); // steering factor => less utna curve
+      const steer = targetVec.sub(this.velocity).multiplyScalar(0.2); // steering factor => less utna curve
 
       this.velocity.add(steer);
       this.velocity.clampLength(0, 2.4);
