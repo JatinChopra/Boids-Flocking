@@ -29,15 +29,17 @@ function App() {
   });
 
   return (
-    <div className="bg-green-500 min-h-screen w-full">
+    <div className="relative min-h-screen w-full flex items-center justify-center">
       <canvas ref={canvasRef} className="min-h-screen w-full"></canvas>
+
       <button
-        className="absolute bottom-10 right-10 text-white font-bold"
+        id="startButton"
+        className="absolute  inset-x-0 top-[70%] p-10 font-bold text-2xl text-white"
         onClick={() => {
           if (w) playBgMusic(w);
         }}
       >
-        Music
+        START
       </button>
     </div>
   );

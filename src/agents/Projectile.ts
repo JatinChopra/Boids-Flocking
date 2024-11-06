@@ -13,14 +13,12 @@ export default class Projectile {
   particles: TrailParticle[];
   lastParticleTime: number;
   shootSoundPlayed: boolean;
-  explosionSoundPlayed: boolean;
 
   static clock = new THREE.Clock();
 
   constructor(predator: Predator, scene: THREE.Scene) {
     this.scene = scene;
     this.shootSoundPlayed = false;
-    this.explosionSoundPlayed = false;
 
     this.hit = false;
     const geo = new THREE.SphereGeometry(0.8);

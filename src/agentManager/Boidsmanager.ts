@@ -178,6 +178,7 @@ export default class BoidsManager {
       if (this.scene.children)
         if (boid.health <= 0) {
           const audio = new Audio();
+          audio.volume = 0.5;
           audio.src = "./explosion.wav";
           audio.play();
 

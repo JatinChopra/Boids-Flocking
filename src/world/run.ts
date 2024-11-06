@@ -13,6 +13,15 @@ export type repulsionSphere = {
 };
 
 export default function run(canvas: HTMLCanvasElement) {
+  let startAnimation = false;
+  let startButton = document.querySelector("#startButton") as HTMLButtonElement;
+  if (startButton) {
+    startButton.addEventListener("click", () => {
+      startAnimation = true;
+      startButton.style.display = "none";
+    });
+  }
+
   // initilizing the world
   const world = new SceneInit(canvas);
   world.scene.background = new THREE.Color(0x151515);
@@ -323,15 +332,9 @@ export default function run(canvas: HTMLCanvasElement) {
   }
 
   function animate() {
-    // orbctrls.update();
-
     world.statsPanel.update();
     world.resizeCanvas(); // resize the canvas if needed
     world.render();
-
-    // update torus sphere
-    // torusAnimate();
-
     // update calls
     group0.updateFlockPosition();
     group0.updatePredators();
@@ -347,13 +350,20 @@ export default function run(canvas: HTMLCanvasElement) {
     group2.updatePredators();
     group2.updateProjectiles();
     group2.updateExplosionParticle();
-
-    followCamera();
-
-    window.requestAnimationFrame(animate);
   }
 
   animate();
+
+  function animationLoop() {
+    if (startAnimation) {
+      animate();
+
+      followCamera();
+    }
+    window.requestAnimationFrame(animationLoop);
+  }
+
+  animationLoop();
 
   return world;
 }

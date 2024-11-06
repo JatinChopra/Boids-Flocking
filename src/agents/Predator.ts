@@ -162,9 +162,9 @@ export default class Predator {
       this.mainProjectileArr.push(projectile);
 
       this.scene.add(projectile.mesh);
-      console.log("shoot-now");
 
       const audio = new Audio();
+      audio.volume = 0.5;
       audio.src = "./laserShoot.wav";
       audio.play();
     }
@@ -200,7 +200,6 @@ export default class Predator {
   }
   stayAbovePlane() {
     if (this.mesh.position.y < -10) {
-      // console.log("stopping");
       this.velocity.setComponent(1, this.velocity.getComponent(1) + 1);
     }
   }
