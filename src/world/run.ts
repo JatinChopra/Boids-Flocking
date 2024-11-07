@@ -19,6 +19,9 @@ export default function run(canvas: HTMLCanvasElement) {
     startButton.addEventListener("click", () => {
       startAnimation = true;
       startButton.style.display = "none";
+
+      const desc = document.getElementById("desc") as HTMLDivElement;
+      desc.style.display = "none";
     });
   }
 
@@ -40,7 +43,7 @@ export default function run(canvas: HTMLCanvasElement) {
   pointLight.position.set(100, 180, 0);
 
   world.scene.add(ambient);
-  world.scene.add(pointLightHelper);
+  // world.scene.add(pointLightHelper);
   world.scene.add(pointLight);
 
   const bottomPlaneGeo = new THREE.PlaneGeometry(550, 550);
@@ -104,16 +107,18 @@ export default function run(canvas: HTMLCanvasElement) {
   boidFolder.add(boidParams, "cohesionRange", 0, 100, 0.1);
   boidFolder.add(boidParams, "escapeRange", 0, 100, 0.1);
 
-  boidFolder.add(boidParams, "separationFactor", 0, 5, 0.01);
-  boidFolder.add(boidParams, "alignmentFactor", 0, 5, 0.01);
-  boidFolder.add(boidParams, "cohesionFactor", 0, 5, 0.01);
-  boidFolder.add(boidParams, "escapeFactor", 0, 100, 1);
+  // boidFolder.add(boidParams, "separationFactor", 0, 5, 0.01);
+  // boidFolder.add(boidParams, "alignmentFactor", 0, 1.7, 0.01);
+  // boidFolder.add(boidParams, "cohesionFactor", 0, 5, 0.01);
+  // boidFolder.add(boidParams, "escapeFactor", 0, 100, 1);
 
   const predatorFolder = world.gui.addFolder("Predator");
   predatorFolder.add(predatorParams, "maxSpeed", 0, 5, 0.1);
   predatorFolder.add(predatorParams, "chasingRange", 0, 100, 0.1);
-  predatorFolder.add(predatorParams, "chasingFactor", 0, 5, 0.01);
+  // predatorFolder.add(predatorParams, "chasingFactor", 0, 5, 0.01);
 
+  // boidFolder.open();
+  // predatorFolder.open();
   world.gui.close();
 
   // // grid helper

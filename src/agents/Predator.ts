@@ -95,7 +95,7 @@ export default class Predator {
 
     this.mesh.position.add(this.velocity);
     // this.stayInsideBoundary(0.04);
-    this.stayInsideBox(0.04);
+    this.stayInsideBox(0.02);
     this.stayAbovePlane();
   }
 
@@ -199,8 +199,8 @@ export default class Predator {
     }
   }
   stayAbovePlane() {
-    if (this.mesh.position.y < -10) {
-      this.velocity.setComponent(1, this.velocity.getComponent(1) + 1);
+    if (this.mesh.position.y < 5) {
+      this.velocity.setComponent(1, this.velocity.getComponent(1) + 0.2);
     }
   }
 
@@ -224,7 +224,7 @@ export default class Predator {
         );
       }
 
-      if (poscomponent < -bound) {
+      if (poscomponent < -bound && axis != 1) {
         if (axis != 1)
           this.velocity.setComponent(
             axis,
