@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import run from "./world/run";
 import * as THREE from "three";
 import { SceneInit } from "./lib/SceneManager";
-import { modelWorldMatrix } from "three/webgpu";
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,7 +22,7 @@ function App() {
     const world = run(canvasRef.current as HTMLCanvasElement);
     wrld = world;
 
-    function windowResizeHandler(e: Event) {
+    function windowResizeHandler() {
       const w = window.innerWidth;
       const h = window.innerHeight;
       if (world.cam.aspect != w / h) {
