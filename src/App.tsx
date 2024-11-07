@@ -44,7 +44,6 @@ function App() {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center">
       <canvas ref={canvasRef} className="min-h-screen w-full"></canvas>
-
       <div
         id="desc"
         className="absolute top-20 flex flex-col items-center justify-center gap-5 "
@@ -64,7 +63,6 @@ function App() {
           across all groups.
         </p>
       </div>
-
       <button
         id="startButton"
         className="absolute border-2 top-[70%] p-5 font-bold text-2xl text-white hover:bg-black hover:bg-opacity-30"
@@ -74,7 +72,24 @@ function App() {
       >
         START
       </button>
-
+      <div className="absolute left-5 bottom-3 text-gray-600">
+        Music by{" "}
+        <a
+          href="https://pixabay.com/users/moodmode-33139253/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=158813"
+          className="underline"
+          target="_blank"
+        >
+          Vlad Krotov
+        </a>{" "}
+        from{" "}
+        <a
+          href="https://pixabay.com/music//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=158813"
+          target="_blank"
+          className="underline"
+        >
+          Pixabay
+        </a>
+      </div>
       <div className="absolute bottom-3 right-5 flex pt-5 gap-5">
         <a
           href={"https://github.com/JatinChopra/Boids-Flocking"}
